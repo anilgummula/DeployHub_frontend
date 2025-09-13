@@ -45,7 +45,7 @@ export default function Home() {
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
             Deploy your projects to{' '}
-            <span className=" bg-clip-text text-transparent">
+            <span className=" bg-clip-text ">
               <span className='text-green-500'>Render</span> & <span className='text-blue-500'>Netlify</span>
             </span>{' '}
             automatically
