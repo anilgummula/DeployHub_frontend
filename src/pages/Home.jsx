@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { AuthContext} from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { Github, ArrowRight, Zap, Globe, Cloud } from 'lucide-react';
+import { useContext } from 'react';
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {

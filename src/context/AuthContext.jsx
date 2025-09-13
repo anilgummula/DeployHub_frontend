@@ -1,70 +1,67 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, } from 'react';
+
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+console.log( "url: ",apiUrl);
 
-//   useEffect(() => {
-//     checkAuth();
-//   }, []);
 
-//   const checkAuth = async () => {
-//     try {
-//       const response = await fetch('/api/auth/me');
-//       if (response.ok) {
-//         const userData = await response.json();
-//         setUser(userData);
-//       }
-//     } catch (error) {
-//       console.error('Auth check failed:', error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
 
-  const login = async () => {
-    try {
-      const response = await fetch('/api/auth/github');
-      const data = await response.json();
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
-  };
+const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(false);
+    
 
-  const logout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setUser(null);
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
+    const login = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/auth/github`);
+            const data = await response.redirected;
+            if(data.redirectUrl){
+                // console.log("result: ",result.data);
+                window.location.href = data.redirectUrl;
 
-  const value = {
-    user,
-    loading,
-    login,
-    logout,
-    isAuthenticated: !!user,
-  };
+            }
+            else{
+                console.log("error: ",result);
+                
+            }
+        
+        //   const data = await response.json();
+        //   if (data.redirectUrl) {
+        //     window.location.href = data.redirectUrl;
+        //   }
+        // console.log("message: ",data);
+        
+        } catch (error) {
+        console.error('Login failed:', error);
+        }
+    };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+    const logout = async () => {
+        try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        setUser(null);
+        window.location.href = '/';
+        } catch (error) {
+        console.error('Logout failed:', error);
+        }
+    };
+
+    const value = {
+        user,
+        loading,
+        login,
+        logout,
+        isAuthenticated: !!user,
+    };
+
+    return (
+        <AuthContext.Provider value={value}>
+        {children}
+        </AuthContext.Provider>
+    );
+    };
+
+export { AuthProvider, AuthContext };

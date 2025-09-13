@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { AuthContext} from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router';
 import { ArrowLeft, Upload, Github, Globe, Cloud, Calendar, FileText, CheckCircle } from 'lucide-react';
 import FileUpload from '../components/FileUpload';
+import { useContext } from 'react';
 
 export default function ProjectPage() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const { id } = useParams();
   const [projectData, setProjectData] = useState(null);

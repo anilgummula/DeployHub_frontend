@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { AuthContext} from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { Plus, Github, Globe, Cloud, Calendar, ChevronRight, Loader2 } from 'lucide-react';
+import { useContext } from 'react';
 
 export default function Dashboard() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(true);

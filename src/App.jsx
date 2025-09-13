@@ -9,7 +9,7 @@ import CreateProjectPage from "./pages/CreateProject";
 
 export default function App() {
   return (
-    <AuthProvider>
+    // <AuthProvider>
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -20,6 +20,6 @@ export default function App() {
           <Route path="/projects/:id" element={<ProjectPage />} />
         </Routes>
       </Router>
-    </AuthProvider>
+    // </AuthProvider>
   );
 }

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { AuthContext} from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { useContext } from 'react';
 
 export default function AuthCallback() {
-  const { user } = useAuth();
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');

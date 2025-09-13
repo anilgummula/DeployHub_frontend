@@ -1,17 +1,19 @@
-import { useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useContext, useEffect } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { Github, Zap, ArrowLeft } from 'lucide-react';
 
+// const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
 export default function Login() {
-  const { user, loading, login } = useAuth();
+  const {loading, login } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard');
-    }
-  }, [user, loading, navigate]);
+//   useEffect(() => {
+//     if (!loading && user) {
+//       navigate('/dashboard');
+//     }
+//   }, [user, loading, navigate]);
 
   if (loading) {
     return (
