@@ -17,22 +17,12 @@ const AuthProvider = ({ children }) => {
     const login = async () => {
         try {
             const response = await fetch(`${apiUrl}/auth/github`);
-            const data = await response.redirected;
-            if(data.redirectUrl){
-                // console.log("result: ",result.data);
-                window.location.href = data.redirectUrl;
-
+            const result = await response.json();
+            if(result.redirectUrl){
+            window.location.href = result.redirectUrl;
+            } else {
+                console.log("Error getting redirect URL:", result);
             }
-            else{
-                console.log("error: ",result);
-                
-            }
-        
-        //   const data = await response.json();
-        //   if (data.redirectUrl) {
-        //     window.location.href = data.redirectUrl;
-        //   }
-        // console.log("message: ",data);
         
         } catch (error) {
         console.error('Login failed:', error);
@@ -41,8 +31,10 @@ const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-        await fetch('/api/auth/logout', { method: 'POST' });
+        // await fetch('/api/auth/logout', { method: 'POST' });
         setUser(null);
+        localStorage.removeItem("userData");
+        localStorage.removeItem("token");
         window.location.href = '/';
         } catch (error) {
         console.error('Logout failed:', error);
@@ -51,6 +43,7 @@ const AuthProvider = ({ children }) => {
 
     const value = {
         user,
+        setUser,
         loading,
         login,
         logout,

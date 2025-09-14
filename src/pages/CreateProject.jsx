@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useContext } from 'react';
 
+
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
 export default function CreateProject() {
   const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -38,18 +41,22 @@ export default function CreateProject() {
     if (!validateForm()) return;
 
     setSubmitting(true);
+
+    const token = localStorage.getItem("token");
+
     try {
-      const response = await fetch('/api/projects', {
+      const response = await fetch(`${apiUrl}/project/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+           "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
         const project = await response.json();
-        navigate(`/projects/${project.id}`);
+        navigate(`/projects/${project._id}`);
       } else {
         const error = await response.json();
         setErrors({ title: error.error || 'Failed to create project' });
@@ -159,7 +166,7 @@ export default function CreateProject() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className="w-full text-indigo-600 border-2 border-indigo-600 px-6 py-3 rounded-xl font-semibold hover:bg-lindigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 {submitting ? (
                   <>

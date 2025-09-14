@@ -5,18 +5,27 @@ import { Plus, Github, Globe, Cloud, Calendar, ChevronRight, Loader2 } from 'luc
 import { useContext } from 'react';
 
 export default function Dashboard() {
-  const { user, loading, logout } = useContext(AuthContext);
+  const { user,setUser,loading, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+//   setUser(localStorage.getItem(user));
+useEffect(() => {
+  const storedUser = localStorage.getItem("userData");
+  if (storedUser) {
+    setUser(JSON.parse(storedUser)); // restore context from localStorage
+  } else {
+    navigate("/login"); // redirect if nothing found
+  }
+}, [setUser, navigate]);
+
 
   useEffect(() => {
+    console.log("user: ",localStorage.getItem("userData"));
+    
     if (user) {
       fetchProjects();
     }
@@ -24,7 +33,10 @@ export default function Dashboard() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('/api/projects');
+        const token = localStorage.getItem("token");
+      const response = await fetch(`${apiUrl}/project`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (response.ok) {
         const data = await response.json();
         setProjects(data);
@@ -68,24 +80,24 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">D</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">DeployFlow</h1>
+              <h1 className="text-xl font-bold text-gray-900">DeployHub</h1>
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 border px-2 py-1 rounded-md mx-8 ">
+                <span className="text-sm text-gray-700 font-bold">{user.name}</span>
                 <img 
                   src={user.avatar_url || ''} 
                   alt={user.name || ''}
-                  className="w-8 h-8 rounded-full"
+                  className="w-8 h-8 rounded-full "
                 />
-                <span className="text-sm text-gray-700">{user.name}</span>
               </div>
               <button
                 onClick={logout}
-                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors font-semibold border-2 px-2 py-1 border-slate-500 rounded-md hover:bg-slate-100"
               >
                 Sign out
               </button>
@@ -103,7 +115,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={() => navigate('/projects/new')}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg"
+            className="text-orange-600 border-2 border-orange-600  px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 hover:bg-orange-100 transition-all shadow-lg"
           >
             <Plus className="w-5 h-5" />
             <span>New Project</span>
@@ -132,16 +144,16 @@ export default function Dashboard() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
-              <div
-                key={project.id}
-                onClick={() => navigate(`/projects/${project.id}`)}
+            <div
+                key={project._id}
+                onClick={() => navigate(`/projects/${project._id}`)}
                 className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-all cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
                     {project.title}
                   </h3>
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition-colors" />
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
                 </div>
                 
                 {project.description && (
@@ -180,10 +192,10 @@ export default function Dashboard() {
                     <span className="text-xs">{formatDate(project.created_at)}</span>
                   </div>
                 </div>
-              </div>
+            </div>
             ))}
           </div>
-        )}
+            )}
       </div>
     </div>
   );

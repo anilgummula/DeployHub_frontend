@@ -1,23 +1,43 @@
-import { useState, useRef } from 'react';
-import { X, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { X, Upload, Loader2, CheckCircle, AlertCircle, Github } from "lucide-react";
 
-export default function FileUpload({ projectId, fileType, onClose, onSuccess }) {
-  const [files, setFiles] = useState([]);
+export default function FileUpload({project, projectId, fileType, onClose, onSuccess }) {
+  const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('idle');
-  const [error, setError] = useState('');
+  const [uploadStatus, setUploadStatus] = useState("idle");
+  const [error, setError] = useState("");
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
+//   const [project, setProject] = useState(false);
+
+
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+
+
+
+  const alreadyUploaded =
+    (fileType === "frontend" && project?.has_frontend) ||
+    (fileType === "backend" && project?.has_backend);
+
+  const repoUrl =
+    fileType === "frontend"
+      ? project?.github_repo_url?.frontend
+      : project?.github_repo_url?.backend;
 
   const handleFileSelect = (selectedFiles) => {
-    if (!selectedFiles) return;
-    
-    const fileArray = Array.from(selectedFiles);
-    setFiles(prev => [...prev, ...fileArray]);
+    if (!selectedFiles || selectedFiles.length === 0) return;
+    const selected = selectedFiles[0];
+    if (selected.type !== "application/zip" && !selected.name.endsWith(".zip")) {
+      setError("Only .zip files are allowed");
+      return;
+    }
+    setFile(selected);
   };
 
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = () => {
+    setFile(null);
+    setError("");
   };
 
   const handleDragOver = (e) => {
@@ -37,73 +57,37 @@ export default function FileUpload({ projectId, fileType, onClose, onSuccess }) 
   };
 
   const handleUpload = async () => {
-    if (files.length === 0) return;
-
+    if (!file) return;
     setUploading(true);
-    setError('');
+    setError("");
 
     try {
+      const token = localStorage.getItem("token");
       const formData = new FormData();
-      files.forEach(file => {
-        formData.append('files', file);
-      });
-      formData.append('fileType', fileType);
+      formData.append("file", file);
+      formData.append("fileType", fileType);
 
-      const response = await fetch(`/api/projects/${projectId}/files`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/file/${projectId}/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       if (response.ok) {
-        setUploadStatus('success');
+        setUploadStatus("success");
         setTimeout(() => {
           onSuccess();
         }, 1500);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Upload failed');
-        setUploadStatus('error');
+        setError(errorData.error || "Upload failed");
+        setUploadStatus("error");
       }
     } catch (err) {
-      setError('Network error. Please try again.');
-      setUploadStatus('error');
+      setError("Network error. Please try again.");
+      setUploadStatus("error");
     } finally {
       setUploading(false);
-    }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const getFileIcon = (fileName) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'js':
-      case 'jsx':
-      case 'ts':
-      case 'tsx':
-        return '⚡';
-      case 'html':
-        return '🌐';
-      case 'css':
-        return '🎨';
-      case 'json':
-        return '📋';
-      case 'md':
-        return '📝';
-      case 'py':
-        return '🐍';
-      case 'java':
-        return '☕';
-      case 'php':
-        return '🐘';
-      default:
-        return '📄';
     }
   };
 
@@ -114,10 +98,12 @@ export default function FileUpload({ projectId, fileType, onClose, onSuccess }) 
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">
-              Upload {fileType === 'frontend' ? 'Frontend' : 'Backend'} Files
+              {fileType === "frontend" ? "Frontend" : "Backend"} Upload
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Upload your {fileType} files to the project
+              {alreadyUploaded
+                ? `Your ${fileType} is already uploaded`
+                : `Upload your ${fileType} packaged in a .zip archive`}
             </p>
           </div>
           <button
@@ -129,21 +115,46 @@ export default function FileUpload({ projectId, fileType, onClose, onSuccess }) 
         </div>
 
         <div className="p-6 max-h-[calc(90vh-140px)] overflow-y-auto">
-          {uploadStatus === 'success' ? (
+          {alreadyUploaded ? (
+            <div className="text-center py-8">
+              <Github className="w-16 h-16 text-black mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {fileType} Repository
+              </h3>
+              {repoUrl ? (
+                <a
+                  href={repoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 hover:underline font-medium"
+                >
+                  {repoUrl}
+                </a>
+              ) : (
+                <p className="text-red-500">Repo URL missing</p>
+              )}
+            </div>
+          ) : uploadStatus === "success" ? (
             <div className="text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Files Uploaded Successfully!</h3>
-              <p className="text-gray-600">Your files have been uploaded and are ready for deployment.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Upload Successful!
+              </h3>
+              <p className="text-gray-600">
+                Your .zip has been extracted and pushed to GitHub.
+              </p>
             </div>
-          ) : uploadStatus === 'error' ? (
+          ) : uploadStatus === "error" ? (
             <div className="text-center py-8">
               <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Failed</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Upload Failed
+              </h3>
               <p className="text-red-600 mb-4">{error}</p>
               <button
                 onClick={() => {
-                  setUploadStatus('idle');
-                  setError('');
+                  setUploadStatus("idle");
+                  setError("");
                 }}
                 className="text-indigo-600 hover:text-indigo-700 font-medium"
               >
@@ -152,96 +163,55 @@ export default function FileUpload({ projectId, fileType, onClose, onSuccess }) 
             </div>
           ) : (
             <>
-              {/* File Drop Zone */}
+              {/* Drop Zone */}
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                  dragOver 
-                    ? 'border-indigo-500 bg-indigo-50' 
-                    : 'border-gray-300 hover:border-gray-400'
+                  dragOver
+                    ? "border-indigo-500 bg-indigo-50"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
               >
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Drop files here or click to browse
+                  Drop your .zip here or click to select
                 </h3>
-                <p className="text-gray-600 mb-4">
-                  Support for all file types. Upload multiple files at once.
-                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".zip"
+                  onChange={(e) => handleFileSelect(e.target.files)}
+                  className="hidden"
+                />
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
                 >
-                  Choose Files
+                  Choose .zip
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={(e) => handleFileSelect(e.target.files)}
-                  className="hidden"
-                />
               </div>
 
-              {/* File List */}
-              {files.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">
-                    Selected Files ({files.length})
-                  </h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {files.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-xl">{getFileIcon(file.name)}</span>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => removeFile(index)}
-                          className="text-red-500 hover:text-red-700 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+              {file && (
+                <div className="mt-6 flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-900">
+                    {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                  <button
+                    onClick={removeFile}
+                    className="text-red-500 hover:text-red-700 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               )}
-
-              {/* File Type Guidelines */}
-              <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <h4 className="font-semibold text-blue-900 mb-2">
-                  {fileType === 'frontend' ? 'Frontend' : 'Backend'} Guidelines
-                </h4>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  {fileType === 'frontend' ? (
-                    <>
-                      <li>• HTML, CSS, JavaScript files</li>
-                      <li>• React, Vue, Angular applications</li>
-                      <li>• Static assets (images, fonts, etc.)</li>
-                      <li>• Build artifacts and configuration files</li>
-                    </>
-                  ) : (
-                    <>
-                      <li>• Server-side application files</li>
-                      <li>• API endpoints and routes</li>
-                      <li>• Database configuration files</li>
-                      <li>• Package.json, requirements.txt, etc.</li>
-                    </>
-                  )}
-                </ul>
-              </div>
             </>
           )}
         </div>
 
         {/* Footer */}
-        {uploadStatus === 'idle' && (
+        {!alreadyUploaded && uploadStatus === "idle" && (
           <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
             <button
               onClick={onClose}
@@ -251,7 +221,7 @@ export default function FileUpload({ projectId, fileType, onClose, onSuccess }) 
             </button>
             <button
               onClick={handleUpload}
-              disabled={files.length === 0 || uploading}
+              disabled={!file || uploading}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {uploading ? (
@@ -262,7 +232,7 @@ export default function FileUpload({ projectId, fileType, onClose, onSuccess }) 
               ) : (
                 <>
                   <Upload className="w-4 h-4" />
-                  <span>Upload Files</span>
+                  <span>Upload</span>
                 </>
               )}
             </button>
